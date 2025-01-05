@@ -134,9 +134,12 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   const imageData = req.file.buffer; // The binary data of the image
   const caption = req.body.caption;  // The caption for the image
 
-  const query = 'INSERT INTO images (caption, imageData) VALUES ($1, $2)';
+  // Modify the query to include RETURNING id
+  const query = 'INSERT INTO images (caption, imageData) VALUES ($1, $2) RETURNING id';
+
   db.query(query, [caption, imageData])
     .then(result => {
+      // Assuming the result is an array and we are retrieving the first row's id
       res.json({ message: 'Image uploaded successfully', imageId: result.rows[0].id });
     })
     .catch(err => {
