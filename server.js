@@ -8,8 +8,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import puppeteer from "puppeteer";
 // MySQL Database connection
-const db = mysql.createConnection({
-  host: 'dpg-ctsvjpt2ng1s73c4hj60-a',     
+const db = new Client({
+  host: 'dpg-ctsvjpt2ng1s73c4hj60-a',  
+  port:5432,
   user: 'madan',  
   password: 'Z1nZOolhskYB6k1Rum1xHxXMHFms5R9y',  
   database: 'loyola'      
