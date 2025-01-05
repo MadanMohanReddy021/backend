@@ -37,7 +37,7 @@ app.get('/images', (req, res) => {
       }
 
       const images = results.rows.map(image => ({
-        imageUrl: `http://localhost:5000/image/${image.id}`,
+        imageUrl: `https://backend-upqj.onrender.com/image/${image.id}`,
         caption: image.caption
       }));
 
