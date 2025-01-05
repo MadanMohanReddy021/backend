@@ -1,5 +1,6 @@
 import express from 'express';
-import { Client } from 'pg'; // Import PostgreSQL Client
+import pkg from 'pg';  // Import the pg package as a default export
+const { Client } = pkg;
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import multer from 'multer';
