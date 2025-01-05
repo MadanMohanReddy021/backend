@@ -75,15 +75,18 @@ app.get('/image/:id', (req, res) => {
   });
 });
 app.get('/api/notifications', (req, res) => {
-  const query = 'SELECT id,notify FROM notifications';
+  const query = 'SELECT id, notify FROM notifications';
 
   db.query(query, (err, results) => {
     if (err) {
       console.error('Error fetching data from database', err);
       return res.status(500).json({ error: 'Failed to fetch data' });
     }
-    console.log(results);
-    res.json(results); 
+
+    // Ensure the result is an array of notifications, even if it's a single row
+    const notifications = results.rows.length > 0 ? results.rows : [];
+
+    res.json(notifications); 
   });
 });
 app.delete('/api/notifications/:id', (req, res) => {
