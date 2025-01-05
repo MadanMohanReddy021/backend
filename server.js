@@ -28,70 +28,78 @@ app.use(bodyParser.json()); // Make sure to use bodyParser here
 
 // Route to get all images
 app.get('/images', (req, res) => {
-  const query = 'SELECT * FROM images';
+  const query = 'SELECT * FROM images'; 
+  
 
-  db.query(query)
-    .then(results => {
-      if (results.rows.length === 0) {
-        return res.status(404).send('No images found.');
-      }
-
-      const images = results.rows.map(image => ({
-        imageUrl: `https://backend-upqj.onrender.com/image/${image.id}`,
-        caption: image.caption
-      }));
-
-      res.json(images);
-    })
-    .catch(err => {
-      console.error('Error retrieving images from PostgreSQL:', err);
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error retrieving images from MySQL:', err);
       return res.status(500).send('Error retrieving images.');
-    });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('No images found.');
+    }
+
+    
+    const images = results.map(image => ({
+      imageUrl: `http://localhost:5000/image/${image.id}`,  
+      caption: image.caption
+    }));
+
+    
+    res.json(images);
+  });
 });
 
 // Route to get an individual image by ID
 app.get('/image/:id', (req, res) => {
-  const imageId = req.params.id;
+  const imageId = req.params.id;  // Get the image ID from the URL parameter
 
-  const query = 'SELECT imageData, caption FROM images WHERE id = $1';
-  db.query(query, [imageId])
-    .then(results => {
-      if (results.rows.length === 0) {
-        return res.status(404).send('Image not found.');
-      }
-
-      const image = results.rows[0];
-
-      // Set the content type based on the file extension in the caption or a predefined format
-      const mimeType = getMimeType(image.caption); // Function to get MIME type from caption or predefined source
-
-      if (!mimeType) {
-        return res.status(400).send('Unsupported image type.');
-      }
-
-      // Set the content type and send the image data
-      res.contentType(mimeType);
-      res.send(image.imageData);
-    })
-    .catch(err => {
-      console.error('Error retrieving image from PostgreSQL:', err);
+  const query = 'SELECT 	imageData, caption FROM images WHERE id = ?';
+  db.query(query, [imageId], (err, results) => {
+    if (err) {
+      console.error('Error retrieving image from MySQL:', err);
       return res.status(500).send('Error retrieving image.');
-    });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('Image not found.');
+    }
+
+    const image = results[0];
+
+    // Set the content type and send the image data
+    res.contentType(image.caption);
+    res.send(image.imageData);
+  });
+});
+app.get('/api/notifications', (req, res) => {
+  const query = 'SELECT id,notify FROM notifications';
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching data from database', err);
+      return res.status(500).json({ error: 'Failed to fetch data' });
+    }
+    console.log(results);
+    res.json(results); 
+  });
+});
+app.delete('/api/notifications/:id', (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM notifications WHERE id = ?';
+
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error deleting notification', err);
+      return res.status(500).json({ error: 'Failed to delete notification' });
+    }
+    console.log('Notification deleted successfully');
+    res.status(200).json({ message: 'Notification deleted' });
+  });
 });
 
-// Function to get MIME type based on image caption
-function getMimeType(caption) {
-  // You can modify this function if your caption contains file extensions
-  if (caption.toLowerCase().includes('jpeg')) {
-    return 'image/jpeg';
-  } else if (caption.toLowerCase().includes('png')) {
-    return 'image/png';
-  } else if (caption.toLowerCase().includes('gif')) {
-    return 'image/gif';
-  } else {
-    return null;  // Return null if MIME type can't be determined
-  }
-}
 
 
 // Route to get notifications
