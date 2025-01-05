@@ -62,8 +62,15 @@ app.get('/image/:id', (req, res) => {
 
       const image = results.rows[0];
 
+      // Set the content type based on the file extension in the caption or a predefined format
+      const mimeType = getMimeType(image.caption); // Function to get MIME type from caption or predefined source
+
+      if (!mimeType) {
+        return res.status(400).send('Unsupported image type.');
+      }
+
       // Set the content type and send the image data
-      res.contentType(image.caption);
+      res.contentType(mimeType);
       res.send(image.imageData);
     })
     .catch(err => {
@@ -71,6 +78,21 @@ app.get('/image/:id', (req, res) => {
       return res.status(500).send('Error retrieving image.');
     });
 });
+
+// Function to get MIME type based on image caption
+function getMimeType(caption) {
+  // You can modify this function if your caption contains file extensions
+  if (caption.toLowerCase().includes('jpeg')) {
+    return 'image/jpeg';
+  } else if (caption.toLowerCase().includes('png')) {
+    return 'image/png';
+  } else if (caption.toLowerCase().includes('gif')) {
+    return 'image/gif';
+  } else {
+    return null;  // Return null if MIME type can't be determined
+  }
+}
+
 
 // Route to get notifications
 app.get('/api/notifications', (req, res) => {
