@@ -1,128 +1,130 @@
 import express from 'express';
-import mysql from 'mysql';
+import { Client } from 'pg'; // Import PostgreSQL Client
 import cors from 'cors';
-const app = express();
 import bodyParser from 'body-parser';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import puppeteer from "puppeteer";
-// MySQL Database connection
+import puppeteer from 'puppeteer';
+
+const app = express();
+
+// PostgreSQL Database connection
 const db = new Client({
-  host: 'dpg-ctsvjpt2ng1s73c4hj60-a',  
-  port:5432,
-  user: 'madan',  
-  password: 'Z1nZOolhskYB6k1Rum1xHxXMHFms5R9y',  
-  database: 'loyola'      
+  host: 'dpg-ctsvjpt2ng1s73c4hj60-a',  // Your PostgreSQL host
+  port: 5432,                          // Default PostgreSQL port
+  user: 'madan',                       // Your PostgreSQL user
+  password: 'Z1nZOolhskYB6k1Rum1xHxXMHFms5R9y', // Your PostgreSQL password
+  database: 'loyola'                   // Your PostgreSQL database name
 });
 
+db.connect()
+  .then(() => console.log('Connected to PostgreSQL database'))
+  .catch(err => console.error('Error connecting to PostgreSQL:', err));
 
-db.connect((err) => {
-  if (err) {
-    console.error('Error connecting to MySQL:', err);
-    return;
-  }
-  console.log('Connected to MySQL database');
-});
+app.use(cors());
+app.use(bodyParser.json()); // Make sure to use bodyParser here
 
-app.use(cors());  
-
-
+// Route to get all images
 app.get('/images', (req, res) => {
-  const query = 'SELECT * FROM images'; 
-  
+  const query = 'SELECT * FROM images';
 
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error retrieving images from MySQL:', err);
+  db.query(query)
+    .then(results => {
+      if (results.rows.length === 0) {
+        return res.status(404).send('No images found.');
+      }
+
+      const images = results.rows.map(image => ({
+        imageUrl: `http://localhost:5000/image/${image.id}`,
+        caption: image.caption
+      }));
+
+      res.json(images);
+    })
+    .catch(err => {
+      console.error('Error retrieving images from PostgreSQL:', err);
       return res.status(500).send('Error retrieving images.');
-    }
-
-    if (results.length === 0) {
-      return res.status(404).send('No images found.');
-    }
-
-    
-    const images = results.map(image => ({
-      imageUrl: `http://localhost:5000/image/${image.id}`,  
-      caption: image.caption
-    }));
-
-    
-    res.json(images);
-  });
+    });
 });
 
 // Route to get an individual image by ID
 app.get('/image/:id', (req, res) => {
-  const imageId = req.params.id;  // Get the image ID from the URL parameter
+  const imageId = req.params.id;
 
-  const query = 'SELECT 	imageData, caption FROM images WHERE id = ?';
-  db.query(query, [imageId], (err, results) => {
-    if (err) {
-      console.error('Error retrieving image from MySQL:', err);
+  const query = 'SELECT imageData, caption FROM images WHERE id = $1';
+  db.query(query, [imageId])
+    .then(results => {
+      if (results.rows.length === 0) {
+        return res.status(404).send('Image not found.');
+      }
+
+      const image = results.rows[0];
+
+      // Set the content type and send the image data
+      res.contentType(image.caption);
+      res.send(image.imageData);
+    })
+    .catch(err => {
+      console.error('Error retrieving image from PostgreSQL:', err);
       return res.status(500).send('Error retrieving image.');
-    }
-
-    if (results.length === 0) {
-      return res.status(404).send('Image not found.');
-    }
-
-    const image = results[0];
-
-    // Set the content type and send the image data
-    res.contentType(image.caption);
-    res.send(image.imageData);
-  });
+    });
 });
+
+// Route to get notifications
 app.get('/api/notifications', (req, res) => {
-  const query = 'SELECT id,notify FROM notifications';
+  const query = 'SELECT id, notify FROM notifications';
 
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error fetching data from database', err);
+  db.query(query)
+    .then(results => {
+      res.json(results.rows);
+    })
+    .catch(err => {
+      console.error('Error fetching data from PostgreSQL:', err);
       return res.status(500).json({ error: 'Failed to fetch data' });
-    }
-    console.log(results);
-    res.json(results); 
-  });
+    });
 });
+
+// Route to delete a notification
 app.delete('/api/notifications/:id', (req, res) => {
   const { id } = req.params;
-  const query = 'DELETE FROM notifications WHERE id = ?';
+  const query = 'DELETE FROM notifications WHERE id = $1';
 
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error('Error deleting notification', err);
+  db.query(query, [id])
+    .then(results => {
+      console.log('Notification deleted successfully');
+      res.status(200).json({ message: 'Notification deleted' });
+    })
+    .catch(err => {
+      console.error('Error deleting notification:', err);
       return res.status(500).json({ error: 'Failed to delete notification' });
-    }
-    console.log('Notification deleted successfully');
-    res.status(200).json({ message: 'Notification deleted' });
-  });
+    });
 });
 
-app.use(bodyParser.json());
+// Route to insert a new row into notifications
 app.post('/api/insert-row', (req, res) => {
   const { notify } = req.body;
-console.log(notify);
+
   if (!notify) {
     return res.status(400).json({ error: 'Notify field is required' });
   }
 
-  // SQL query to insert data into the notifications table
-  const query = 'INSERT INTO notifications (notify) VALUES (?)';
-
-  db.query(query, [notify], (err, results) => {
-    if (err) {
-      console.error('Error inserting data: ', err);
+  const query = 'INSERT INTO notifications (notify) VALUES ($1)';
+  db.query(query, [notify])
+    .then(result => {
+      res.status(200).json({ message: 'Row inserted successfully', data: result });
+    })
+    .catch(err => {
+      console.error('Error inserting data:', err);
       return res.status(500).json({ error: 'Database error' });
-    }
-
-    return res.status(200).json({ message: 'Row inserted successfully', data: results });
-  });
+    });
 });
+
+// File upload setup using multer
 const storage = multer.memoryStorage(); // Store image in memory as binary data
 const upload = multer({ storage });
+
+// Route to upload an image
 app.post('/api/upload', upload.single('image'), (req, res) => {
   if (!req.file || !req.body.caption) {
     return res.status(400).json({ message: 'Please provide both an image and a caption' });
@@ -131,67 +133,59 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   const imageData = req.file.buffer; // The binary data of the image
   const caption = req.body.caption;  // The caption for the image
 
-  // Insert the image and caption into the MySQL database
-  const query = 'INSERT INTO images (caption, imageData) VALUES (?, ?)';
-  db.query(query, [caption, imageData], (err, result) => {
-    if (err) {
-      console.error('Error inserting data into database:', err);
+  const query = 'INSERT INTO images (caption, imageData) VALUES ($1, $2)';
+  db.query(query, [caption, imageData])
+    .then(result => {
+      res.json({ message: 'Image uploaded successfully', imageId: result.rows[0].id });
+    })
+    .catch(err => {
+      console.error('Error inserting data into PostgreSQL:', err);
       return res.status(500).json({ message: 'Error uploading image' });
-    }
-    res.json({ message: 'Image uploaded successfully', imageId: result.insertId });
-  });
+    });
 });
+
+// Route to handle user login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
 
-  // Check if the user exists
-  db.query('SELECT * FROM users WHERE username = ? and password=?', [username,password], async (err, results) => {
-    if (err) {
+  db.query('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password])
+    .then(results => {
+      if (results.rows.length === 0) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+
+      const user = results.rows[0];
+
+      const token = jwt.sign({ userId: user.username }, 'your_jwt_secret', { expiresIn: '1h' });
+
+      res.json({ message: 'Login successful', token });
+    })
+    .catch(err => {
+      console.error('Error during login:', err);
       return res.status(500).json({ message: 'Server error' });
-    }
-    console.log(results);
-    if (results.length === 0) {
-      console.log(results);
-      return res.status(400).json({ message: 'Invalid credentials' });
-    
-    }
-
-    const user = results[0];
-
-  
-    
-    // Generate a JWT token
-    const token = jwt.sign({ userId: user.username }, 'your_jwt_secret', { expiresIn: '1h' });
-
-    res.json({ message: 'Login successful', token });
-  });
+    });
 });
-//************************************* ******************************************************************************************************************************************************************
-//fetching the marks for the students
-//*********************************************************************************************************************************************************************************************************
-//
+
+// Fetching marks for students
 app.post('/api/marks', async (req, res) => {
-  const { start, end,sem } = req.body; 
-  console.log(start,end);
-  const Sem=sem;
-  const startpin=parseInt((start.slice(-3)),10);
-  const endpin=parseInt((end.slice(-3)),10);
-  const basepin=start.slice(0,9);
+  const { start, end, sem } = req.body;
+  const startPin = parseInt((start.slice(-3)), 10);
+  const endPin = parseInt((end.slice(-3)), 10);
+  const basePin = start.slice(0, 9);
+
   try {
-    
     const dic = [];
-    for (let i = startpin; i <= endpin; i++) {
+    for (let i = startPin; i <= endPin; i++) {
       let k = i.toString().padStart(3, '0');
       dic.push({
-        pin: `${basepin}${k}`,
-        sem: Sem,
+        pin: `${basePin}${k}`,
+        sem
       });
-      console.log(dic);
     }
-    console.log(dic);
+
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
-    
+
     const results = [];
 
     for (const value of dic) {
@@ -201,7 +195,7 @@ app.post('/api/marks', async (req, res) => {
       await page.click('.btn.btn-primary');
       await page.waitForNavigation();
 
-      let pin, branch, sem, name, arr = [];
+      let pin, branch, name, arr = [];
 
       const res = await page.$$eval('#d', (elements) => elements.length > 0);
 
@@ -211,7 +205,6 @@ app.post('/api/marks', async (req, res) => {
           pin = value.pin;
           arr = [{ message: 'not registered' }];
           branch = '';
-          sem = value.sem;
           name = '';
         } else {
           const resultText = await page.$$eval('#altrowstable1 tbody tr', (rows) => {
@@ -225,7 +218,6 @@ app.post('/api/marks', async (req, res) => {
           pin = String(resultText[0].cells[0]);
           name = String(resultText[1].cells[0]);
           branch = String(resultText[2].cells[0]);
-          sem = String(value.sem);
 
           resultText.forEach((value, index) => {
             if (index >= 4) {
@@ -240,32 +232,24 @@ app.post('/api/marks', async (req, res) => {
       }
 
       const student = {
-        pin: pin,
-        name: name,
+        pin,
+        name,
         course: branch,
         semester: sem,
         marks: arr,
       };
 
-      // Store results to be sent back to the API
       results.push(student);
 
-      // Insert data into the database
       const marksJson = JSON.stringify(student.marks);
       const query = `
         INSERT INTO student (pinnumber, name, branch, semester, marks)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5)
       `;
-      db.query(query, [pin, name, branch, sem, marksJson], (err, results) => {
-        if (err) {
-          console.error('Error inserting data:', err);
-        } else {
-          console.log('Data inserted successfully:', results);
-        }
-      });
+      db.query(query, [pin, name, branch, sem, marksJson])
+        .catch(err => console.error('Error inserting data:', err));
     }
 
-    // Send the results as a response to the API call
     res.status(200).json(results);
 
     await browser.close();
@@ -274,29 +258,19 @@ app.post('/api/marks', async (req, res) => {
     res.status(500).json({ error: 'Failed to scrape results' });
   }
 });
-//*****************************************************************************************************************************************************************************
-// ***************************************************************** end of all apis*******************************************************************************************
-//*****************************************************************************************************************************************************************************
-     
 
-
-
-
-
-// *******************************************************************************************************************************************************************************
-//***************************************************************** get marks ****************************************************************************************************
- //******************************************************************************************************************************************************************************* 
- app.get('/api/students', (req, res) => {
-  db.query("SELECT * FROM student where name!=''", (err, results) => {
-    if (err) {
+// Get all students
+app.get('/api/students', (req, res) => {
+  db.query("SELECT * FROM student WHERE name != ''")
+    .then(results => {
+      res.json(results.rows);
+    })
+    .catch(err => {
       res.status(500).json({ error: 'Error fetching data' });
-    } else {
-      res.json(results); // Send data as JSON response
-    }
-  });
+    });
 });
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
