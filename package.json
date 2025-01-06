@@ -15,7 +15,8 @@
     "jsonwebtoken": "^8.5.1",
     "multer": "^1.4.3",
     "pg": "^8.7.1", 
-     "puppeteer-core": "^20.1.0"
+     "puppeteer": "^20.1.0",
+     "chromium": "^111.0.0"
   },
   "author": "",
   "license": "ISC"
