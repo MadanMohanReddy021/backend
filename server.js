@@ -74,8 +74,6 @@ app.get('/image/:id', (req, res) => {
 
     const image = results[0];
 
-    // Set the content type and send the image data
-    res.contentType(image.caption);
     res.send(image.imageData);
   });
 });
