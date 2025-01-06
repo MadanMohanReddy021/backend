@@ -68,12 +68,12 @@ app.get('/image/:id', (req, res) => {
       return res.status(500).send('Error retrieving image.');
     }
 
-    if (results.length === 0) {
+    if (results.rows.length === 0) {
       return res.status(404).send('Image not found.');
     }
 
     const image = results[0];
-
+    res.contentType('image/jpeg');
     res.send(image.imageData);
   });
 });
