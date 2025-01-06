@@ -23,7 +23,12 @@ db.connect()
   .then(() => console.log('Connected to PostgreSQL database'))
   .catch(err => console.error('Error connecting to PostgreSQL:', err));
 
-app.use(cors());
+const corsOptions = {
+    origin: 'https://loyolapolytechnicysrr.onrender.com',
+    methods: ['GET', 'POST'],  // You can specify the allowed HTTP methods as needed
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json()); // Make sure to use bodyParser here
 
 // Route to get all images
@@ -42,7 +47,7 @@ app.get('/images', (req, res) => {
     }
 
     
-    const images = results.map(image => ({
+    const images = results.rows.map(image => ({
       imageUrl: `https://backend-upqj.onrender.com/image/${image.id}`,  
       caption: image.caption
     }));
@@ -56,7 +61,7 @@ app.get('/images', (req, res) => {
 app.get('/image/:id', (req, res) => {
   const imageId = req.params.id;  // Get the image ID from the URL parameter
 
-  const query = 'SELECT 	imageData, caption FROM images WHERE id = ?';
+  const query = 'SELECT  imageData, caption FROM images WHERE id = $1';
   db.query(query, [imageId], (err, results) => {
     if (err) {
       console.error('Error retrieving image from MySQL:', err);
