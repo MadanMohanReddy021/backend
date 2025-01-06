@@ -25,7 +25,7 @@ db.connect()
 
 const corsOptions = {
     origin: 'https://loyolapolytechnicysrr.onrender.com',
-    methods: ['GET', 'POST'],  // You can specify the allowed HTTP methods as needed
+    
 };
 
 app.use(cors(corsOptions));
