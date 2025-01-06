@@ -224,7 +224,7 @@ app.post('/api/marks', async (req, res) => {
     }
  const browser = await puppeteer.launch({
   headless: true,
-  executablePath: '/usr/lib/chromium/chrome',  // Automatically points to the bundled Chromium
+  executablePath: '/opt/render/chromium',  
   args: [
     '--no-sandbox',
     '--disable-setuid-sandbox',
