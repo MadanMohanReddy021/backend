@@ -72,7 +72,7 @@ app.get('/image/:id', (req, res) => {
       return res.status(404).send('Image not found.');
     }
 
-    const image = results[0];
+    const image = results.rows[0];
     res.contentType('image/jpeg');
     res.send(image.imageData);
   });
