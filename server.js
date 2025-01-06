@@ -223,9 +223,15 @@ app.post('/api/marks', async (req, res) => {
       });
     }
 
-    const browser = await puppeteer.launch({
-  headless: true,
-  args: ['--no-sandbox', '--disable-setuid-sandbox']
+const browser = await puppeteer.launch({
+  headless: true,  // Headless mode is ideal for cloud environments
+  executablePath:  '/usr/bin/chromium-browser', // Use Render's default Chromium path
+  args: [
+    '--no-sandbox',            // Avoids sandboxing issues on cloud environments
+    '--disable-setuid-sandbox', // Prevents potential security issues
+    '--disable-dev-shm-usage', // Fixes potential memory issues in containers
+    '--disable-gpu',            // No need for GPU acceleration in headless mode
+  ],
 });
     const page = await browser.newPage();
 
