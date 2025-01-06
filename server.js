@@ -6,7 +6,7 @@ import bodyParser from 'body-parser';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import puppeteer from 'puppeteer-core';
+import puppeteer from 'puppeteer';
 
 const app = express();
 
@@ -222,17 +222,7 @@ app.post('/api/marks', async (req, res) => {
         sem
       });
     }
-
-const browser = await puppeteer.launch({
-  headless: true,  // Headless mode is ideal for cloud environments
-  executablePath:  '/usr/bin/chromium-browser', // Use Render's default Chromium path
-  args: [
-    '--no-sandbox',            // Avoids sandboxing issues on cloud environments
-    '--disable-setuid-sandbox', // Prevents potential security issues
-    '--disable-dev-shm-usage', // Fixes potential memory issues in containers
-    '--disable-gpu',            // No need for GPU acceleration in headless mode
-  ],
-});
+ const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
     const results = [];
