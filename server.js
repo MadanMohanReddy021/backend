@@ -222,7 +222,16 @@ app.post('/api/marks', async (req, res) => {
         sem
       });
     }
- const browser = await puppeteer.launch({ headless: true });
+ const browser = await puppeteer.launch({
+  headless: true,
+  executablePath: puppeteer.executablePath(),  // Automatically points to the bundled Chromium
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+  ],
+});
     const page = await browser.newPage();
 
     const results = [];
