@@ -6,7 +6,7 @@ import bodyParser from 'body-parser';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 
 const app = express();
 
