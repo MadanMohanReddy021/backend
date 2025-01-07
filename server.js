@@ -222,7 +222,7 @@ app.post('/api/marks', async (req, res) => {
         sem
       });
     }
- const browser = await puppeteer.launch(headless: true);
+ const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
     const results = [];
