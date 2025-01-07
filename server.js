@@ -61,7 +61,7 @@ app.get('/api/images', async (req, res) => {
         return res.status(404).json({ message: 'Image not found' });
       }
   
-      const image = result.rows[0].image_data;
+      const image = result.rows[0].imagedata;
       res.set('Content-Type', 'image/jpeg'); // You can adjust based on the image format
       res.send(image); // Send the image binary as a response
     } catch (error) {
@@ -168,7 +168,7 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
       const image = req.file.buffer; // Image data as binary buffer
   
       // Store image in the database (you can store image in bytea field)
-      const query = 'INSERT INTO images (caption, image_data) VALUES ($1, $2) RETURNING id';
+      const query = 'INSERT INTO images (caption, imagedata) VALUES ($1, $2) RETURNING id';
       const values = [caption, image];
   
       const result = await db.query(query, values);
