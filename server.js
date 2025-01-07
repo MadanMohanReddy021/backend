@@ -32,51 +32,49 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json()); // Make sure to use bodyParser here
 
 // Route to get all images
-app.get('/images', (req, res) => {
-  const query = 'SELECT * FROM images'; 
+app.get('/api/images', async (req, res) => {
+    try {
+      // Query to fetch all image data and their IDs from the database
+      const query = 'SELECT id, caption FROM images';
+      const result = await db.query(query);
   
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error retrieving images from MySQL:', err);
-      return res.status(500).send('Error retrieving images.');
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'No images found' });
+      }
+  
+      // Send the list of images with their IDs and captions
+      res.status(200).json(result.rows);
+    } catch (error) {
+      console.error('Error fetching images:', error);
+      res.status(500).json({ message: 'Error fetching images' });
     }
-
-    if (results.length === 0) {
-      return res.status(404).send('No images found.');
-    }
-
-    
-    const images = results.rows.map(image => ({
-      imageUrl: `https://backend-upqj.onrender.com/image/${image.id}`,  
-      caption: image.caption
-    }));
-
-    
-    res.json(images);
   });
-});
-
-// Route to get an individual image by ID
-app.get('/image/:id', (req, res) => {
-  const imageId = req.params.id;  // Get the image ID from the URL parameter
-
-  const query = 'SELECT  imageData, caption FROM images WHERE id = $1';
-  db.query(query, [imageId], (err, results) => {
-    if (err) {
-      console.error('Error retrieving image from MySQL:', err);
-      return res.status(500).send('Error retrieving image.');
+ app.get('/api/images/:id', async (req, res) => {
+    const { id } = req.params;
+  
+    try {
+      // Fetch image from the database by ID
+      const query = 'SELECT * FROM images WHERE id = $1';
+      const result = await db.query(query, [id]);
+  
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Image not found' });
+      }
+  
+      const image = result.rows[0].image_data;
+      res.set('Content-Type', 'image/jpeg'); // You can adjust based on the image format
+      res.send(image); // Send the image binary as a response
+    } catch (error) {
+      console.error('Error fetching image:', error);
+      res.status(500).json({ message: 'Error fetching image' });
     }
-
-    if (results.rows.length === 0) {
-      return res.status(404).send('Image not found.');
-    }
-
-    const image = results.rows[0];
-    res.contentType('image/jpeg');
-    res.send(image.imageData);
   });
-});
+
+
+
+
+
+
 app.get('/api/notifications', (req, res) => {
   const query = 'SELECT id, notify FROM notifications';
 
@@ -158,32 +156,35 @@ app.post('/api/insert-row', (req, res) => {
 });
 
 // File upload setup using multer
-const storage = multer.memoryStorage(); // Store image in memory as binary data
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
-
-// Route to upload an image
-app.post('/api/upload', upload.single('image'), (req, res) => {
-  if (!req.file || !req.body.caption) {
-    return res.status(400).json({ message: 'Please provide both an image and a caption' });
-  }
-
-  const imageData = req.file.buffer; // The binary data of the image
-  const caption = req.body.caption;  // The caption for the image
-
-  // Modify the query to include RETURNING id
-  const query = 'INSERT INTO images (caption, imageData) VALUES ($1, $2) RETURNING id';
-
-  db.query(query, [caption, imageData])
-    .then(result => {
-      // Assuming the result is an array and we are retrieving the first row's id
-      res.json({ message: 'Image uploaded successfully', imageId: result.rows[0].id });
-    })
-    .catch(err => {
-      console.error('Error inserting data into PostgreSQL:', err);
-      return res.status(500).json({ message: 'Error uploading image' });
-    });
-});
-
+app.post('/api/upload', upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file || !req.body.caption) {
+        return res.status(400).json({ message: 'Image and caption are required.' });
+      }
+  
+      const { caption } = req.body;
+      const image = req.file.buffer; // Image data as binary buffer
+  
+      // Store image in the database (you can store image in bytea field)
+      const query = 'INSERT INTO images (caption, image_data) VALUES ($1, $2) RETURNING id';
+      const values = [caption, image];
+  
+      const result = await db.query(query, values);
+      const imageId = result.rows[0].id;
+  
+      // Generate a response with image URL (or ID)
+      res.status(201).json({
+        message: 'Image uploaded successfully!',
+        imageUrl: `https://https://backend-upqj.onrender.com/api/images/${imageId}`
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      res.status(500).json({ message: 'Error uploading image' });
+    }
+  });
+  
 // Route to handle user login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
