@@ -94,7 +94,7 @@ app.get('/api/notifications', (req, res) => {
 });
 app.delete('/api/notifications/:id', (req, res) => {
   const { id } = req.params;
-  const query = 'DELETE FROM notifications WHERE id = ?';
+  const query = 'DELETE FROM notifications WHERE id = $1';
 
   db.query(query, [id], (err, results) => {
     if (err) {
