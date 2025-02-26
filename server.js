@@ -12,11 +12,11 @@ const app = express();
 
 // PostgreSQL Database connection
 const db = new Client({
-  host: 'dpg-ctsvjpt2ng1s73c4hj60-a',  // Your PostgreSQL host
+  host: 'dpg-cuuk675ds78s73b07i80-a',  // Your PostgreSQL host
   port: 5432,                          // Default PostgreSQL port
-  user: 'madan',                       // Your PostgreSQL user
-  password: 'Z1nZOolhskYB6k1Rum1xHxXMHFms5R9y', // Your PostgreSQL password
-  database: 'loyola'                   // Your PostgreSQL database name
+  user: 'loyola_4znl_user',                       // Your PostgreSQL user
+  password: 'd7kytjitiwAsqES504tjCdBn7tkJPGwH', // Your PostgreSQL password
+  database: 'loyola_4znl'                   // Your PostgreSQL database name
 });
 
 db.connect()
