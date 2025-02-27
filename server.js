@@ -346,8 +346,8 @@ app.post('/api/signup', async (req, res) => {
       // Insert into the database with the hashed password
       const insertUser = await new Promise((resolve, reject) => {
           db.query(
-              'INSERT INTO candidates (hallTicket, password, name) VALUES (?, ?, ?)', // Changed to 'candidates'
-              [hallTicket, hashedPassword, name], // Use hashedPassword here
+              'INSERT INTO candidates (hallTicket,name, password ) VALUES (?, ?, ?)', // Changed to 'candidates'
+              [hallTicket, name,hashedPassword], // Use hashedPassword here
               (err, result) => {
                   if (err) {
                       reject(err);
