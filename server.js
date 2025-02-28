@@ -482,13 +482,13 @@ app.get("/api/payments", (req, res) => {
   const sql = "SELECT * FROM Payments";
   db.query(sql, (err, result) => {
     if (err) {
-      console.error("SQL Error:", err.message);
       return res.status(500).json({ error: err.message });
     }
-    console.log("Database Response:", result); // Log output
-    res.json(result);
+    console.log("Database Response:", result); // This logs the full object
+    res.json(result.rows); // Only send the rows to the client
   });
 });
+
 
 
 // Delete a payment by hallTicket
