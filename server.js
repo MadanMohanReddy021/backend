@@ -383,29 +383,35 @@ app.post('/api/candidates-login', (req, res) => {
   const { username, password } = req.body;
 
   // Check if the user exists in the 'candidates' table
-  db.query('SELECT * FROM candidates WHERE hallTicket = $1', [username], async (err, results) => {
+  db.query('SELECT * FROM candidates WHERE hallTicket = $1', [username], async (err, result) => {
     if (err) {
       console.error('Error in /api/candidates-login:', err);
       return res.status(500).json({ message: 'Server error' });
     }
 
-    if (results.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const candidate = results[0];
+    const candidate = result.rows[0]; // Fetch first row
+
     // Compare the entered password with the hashed password in the database
     const isMatch = await bcrypt.compare(password, candidate.password);
 
     if (isMatch) {
       // Generate a JWT token
-      const token = jwt.sign({ userId: candidate.hallTicket }, 'your_jwt_secret', { expiresIn: '1h' });
-      res.json({ message: 'Login successful', loyolaToken: token }); // Use 'loyolaToken' here
+      const token = jwt.sign(
+        { userId: candidate.hallTicket }, 
+        'your_jwt_secret', 
+        { expiresIn: '1h' }
+      );
+      res.json({ message: 'Login successful', loyolaToken: token });
     } else {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
   });
 });
+
 
 
 
