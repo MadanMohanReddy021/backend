@@ -478,7 +478,7 @@ app.post('/api/submit-payment', (req, res) => {
 
 
 
-app.get("/payments", (req, res) => {
+app.get("/api/payments", (req, res) => {
   const sql = "SELECT * FROM Payments";
   db.query(sql, (err, result) => {
     if (err) {
