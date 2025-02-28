@@ -482,11 +482,14 @@ app.get("/api/payments", (req, res) => {
   const sql = "SELECT * FROM Payments";
   db.query(sql, (err, result) => {
     if (err) {
+      console.error("SQL Error:", err.message);
       return res.status(500).json({ error: err.message });
     }
+    console.log("Database Response:", result); // Log output
     res.json(result);
   });
 });
+
 
 // Delete a payment by hallTicket
 app.delete("/payments/:hallTicket", (req, res) => {
