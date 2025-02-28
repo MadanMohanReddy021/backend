@@ -436,16 +436,43 @@ app.post('/api/submit-payment', (req, res) => {
     return res.status(400).json({ message: 'Hall Ticket and Transaction ID are required.' });
   }
 
-  
-  const query = 'INSERT INTO payments (hallTicket, transactionId) VALUES ($1, $2)';
-    db.query(query, [hallTicket, transactionId], (err, result) => {
+  // Check if the transaction ID is already used
+  const checkTransactionQuery = 'SELECT * FROM payments WHERE transactionId = $1';
+  db.query(checkTransactionQuery, [transactionId], (err, result) => {
+    if (err) {
+      console.error('Database query error:', err);
+      return res.status(500).json({ message: 'Server error. Please try again later.' });
+    }
+
+    if (result.rows.length > 0) {
+      return res.status(400).json({ message: 'This transaction ID has already been used.' });
+    }
+
+    // If transaction ID is unique, check if the hall ticket already has a payment
+    const checkHallTicketQuery = 'SELECT * FROM payments WHERE hallTicket = $1';
+    db.query(checkHallTicketQuery, [hallTicket], (err, result) => {
+      if (err) {
+        console.error('Database query error:', err);
+        return res.status(500).json({ message: 'Server error. Please try again later.' });
+      }
+
+      if (result.rows.length > 0) {
+        return res.status(400).json({ message: 'Payment already submitted for this Hall Ticket.' });
+      }
+
+      // Insert the payment if both transaction ID and hall ticket are unique
+      const insertQuery = 'INSERT INTO payments (hallTicket, transactionId) VALUES ($1, $2)';
+      db.query(insertQuery, [hallTicket, transactionId], (err, result) => {
         if (err) {
-            console.error('Error inserting data into database:', err);
-            return res.status(500).json({ message: 'Error submitting the payment' });
+          console.error('Error inserting data into database:', err);
+          return res.status(500).json({ message: 'Error submitting the payment' });
         }
-        res.json({ message: 'payment submitted successfully'});
+        res.json({ message: 'Payment submitted successfully' });
+      });
     });
+  });
 });
+
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -545,21 +572,23 @@ app.post('/api/application', (req, res) => {
 
 
 
-
 app.get("/api/results/:hallticketnumber", (req, res) => {
   const { hallticketnumber } = req.params;
-  const query = "SELECT * FROM result WHERE hallticketnumber = ?";
+  const query = "SELECT * FROM result WHERE hallticket = $1";
 
-  db.query(query, [hallticketnumber], (err, results) => {
+  db.query(query, [hallticketnumber], (err, result) => {
     if (err) {
-      return res.status(500).json({ error: "Database query error" });
+      console.error("Database query error:", err);
+      return res.status(500).json({ error: "Server error. Please try again later." });
     }
-    if (results.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ message: "Result not found" });
     }
-    res.json(results[0]);
+    res.json(result.rows[0]); // Return the first row
   });
 });
+
+
 
 
 
