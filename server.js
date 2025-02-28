@@ -327,7 +327,7 @@ app.post('/api/signup', async (req, res) => {
   try {
       // Check if the hall ticket already exists
       const existingUser = await new Promise((resolve, reject) => {
-          db.query('SELECT * FROM candidates WHERE hallTicket = ?', [hallTicket], (err, results) => { // Changed to 'candidates'
+          db.query('SELECT * FROM candidates WHERE hallTicket = $1', [hallTicket], (err, results) => { // Changed to 'candidates'
               if (err) {
                   reject(err);
               } else {
@@ -346,7 +346,7 @@ app.post('/api/signup', async (req, res) => {
       // Insert into the database with the hashed password
       const insertUser = await new Promise((resolve, reject) => {
           db.query(
-              'INSERT INTO candidates (hallTicket,name, password ) VALUES (?, ?, ?)', // Changed to 'candidates'
+              'INSERT INTO candidates (hallTicket,name, password ) VALUES ($1, $2, $3)', // Changed to 'candidates'
               [hallTicket, name,hashedPassword], // Use hashedPassword here
               (err, result) => {
                   if (err) {
@@ -383,7 +383,7 @@ app.post('/api/candidates-login', (req, res) => {
   const { username, password } = req.body;
 
   // Check if the user exists in the 'candidates' table
-  db.query('SELECT * FROM candidates WHERE hallTicket = ?', [username], async (err, results) => {
+  db.query('SELECT * FROM candidates WHERE hallTicket = $1', [username], async (err, results) => {
     if (err) {
       console.error('Error in /api/candidates-login:', err);
       return res.status(500).json({ message: 'Server error' });
@@ -431,7 +431,7 @@ app.post('/api/submit-payment', (req, res) => {
   }
 
   
-  const query = 'INSERT INTO payments (hallTicket, transactionId) VALUES (?, ?)';
+  const query = 'INSERT INTO payments (hallTicket, transactionId) VALUES ($1, $2)';
     db.query(query, [hallTicket, transactionId], (err, result) => {
         if (err) {
             console.error('Error inserting data into database:', err);
@@ -458,7 +458,7 @@ app.get("/payments", (req, res) => {
 // Delete a payment by hallTicket
 app.delete("/payments/:hallTicket", (req, res) => {
   const { hallTicket } = req.params;
-  const sql = "DELETE FROM Payments WHERE hallTicket = ?";
+  const sql = "DELETE FROM Payments WHERE hallTicket = $1";
   db.query(sql, [hallTicket], (err, result) => {
     if (err) {
       return res.status(500).json({ error: err.message });
@@ -472,14 +472,14 @@ app.post("/confirmPayment", (req, res) => {
   const { hallTicket } = req.body;
 
   // Insert into Confirmpayments table
-  const insertSql = "INSERT INTO Confirmpayments (hallTicket) VALUES (?)";
+  const insertSql = "INSERT INTO Confirmpayments (hallTicket) VALUES ($1)";
   db.query(insertSql, [hallTicket], (err, result) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
 
     // Delete from Payment table after confirmation
-    const deleteSql = "DELETE FROM Payment WHERE hallTicket = ?";
+    const deleteSql = "DELETE FROM Payment WHERE hallTicket = $1";
     db.query(deleteSql, [hallTicket], (err, result) => {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -504,7 +504,7 @@ app.post('/api/application', (req, res) => {
     return res.status(400).json({ message: 'Duplicate program preferences are not allowed.' });
   }
   // check if the payment is done or not
-  const checkPaymentQuery = 'SELECT * FROM Confirmpayments WHERE hallTicket = ?';
+  const checkPaymentQuery = 'SELECT * FROM Confirmpayments WHERE hallTicket = $1';
 
   db.query(checkPaymentQuery, [hallTicket], (err, paymentResults) => {
     if (err) {
@@ -520,7 +520,7 @@ app.post('/api/application', (req, res) => {
   // 2. Store the application information in your database (create a new table for applications if needed).
   // 3. Send a success response back to the client.
   // 4. Handle errors and send appropriate error messages.
-  const query = 'INSERT INTO applications (hallTicket, marks, preference1, preference2, preference3, preference4, preference5, preference6) VALUES (?, ?, ?, ?, ?, ?,?,?)';
+  const query = 'INSERT INTO applications (hallTicket, marks, preference1, preference2, preference3, preference4, preference5, preference6) VALUES ($1, $2, $3, $4, $5, $6,$7,$8)';
     db.query(query, [hallTicket, marks, preferences[0], preferences[1], preferences[2], preferences[3], preferences[4], preferences[5]], (err, result) => {
         if (err) {
             console.error('Error inserting data into database:', err);
