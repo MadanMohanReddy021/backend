@@ -492,7 +492,7 @@ app.get("/api/payments", (req, res) => {
 
 
 // Delete a payment by hallTicket
-app.delete("/payments/:hallTicket", (req, res) => {
+app.delete("/api/payments/:hallTicket", (req, res) => {
   const { hallTicket } = req.params;
   const sql = "DELETE FROM Payments WHERE hallTicket = $1";
   db.query(sql, [hallTicket], (err, result) => {
@@ -504,7 +504,7 @@ app.delete("/payments/:hallTicket", (req, res) => {
 });
 
 // Confirm payment by moving hallTicket to Confirmpayments
-app.post("/confirmPayment", (req, res) => {
+app.post("/api/confirmPayment", (req, res) => {
   const { hallTicket } = req.body;
 
   // Insert into Confirmpayments table
@@ -596,23 +596,23 @@ app.get("/api/results/:hallticketnumber", (req, res) => {
 
 
 
-app.get("/allocate", async (req, res) => {
+app.get("/api/allocate", async (req, res) => {
   const branchLimits = {
-    dcme: 30,
-    dece: 30,
-    deee: 30,
-    dce: 30,
-    dme: 30,
-    dmng: 30,
+    CSE: 36,
+    ECE: 54,
+    EEE: 54,
+    CIVIL: 27,
+    MECH: 18,
+    MNG: 11,
   };
   
   const branchCounts = {
-    dcme: 0,
-    dece: 0,
-    deee: 0,
-    dce: 0,
-    dme: 0,
-    dmng: 0,
+    CSE: 0,
+    ECE: 0,
+    EEE: 0,
+    CIVIL: 0,
+    MECH: 0,
+    MNG: 0,
   };
   db.query("SELECT * FROM applications ORDER BY marks DESC", async (err, rows) => {
     if (err) {
