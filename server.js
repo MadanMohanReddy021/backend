@@ -619,7 +619,7 @@ app.get("/api/allocate", async (req, res) => {
       return res.status(500).json({ error: "Database error" });
     }
     
-    for (let row of rows) {
+    for (let row of rows.rows) {
       const choices = [
         row.preference1,
         row.preference2,
